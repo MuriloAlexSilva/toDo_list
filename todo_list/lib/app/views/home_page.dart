@@ -10,7 +10,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List _toDoList = [];
+  List _toDoList = ["Murilo", "Camila", "Muca", "Manuela"];
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +44,25 @@ class _HomePageState extends State<HomePage> {
                   textColor: Colors.white,
                 )
               ],
+            ),
+          ),
+          Expanded(
+            //Necessario o expanded para poder saber até onde vai o ListView, caso não coloque
+            //não irá aparecer nada
+            child: ListView.builder(
+              padding: EdgeInsets.only(top: 10),
+              itemCount: _toDoList.length,
+              itemBuilder: (context, index) {
+                //Nos instanciamos o index para chamar o index da lista e context para chamar o contexto do index solicitado.
+                return CheckboxListTile(
+                  value: _toDoList[index]["ok"],
+                  secondary: CircleAvatar(
+                    child: Icon(
+                        _toDoList[index]["ok"] ? Icons.check : Icons.error),
+                  ),
+                  title: Text(_toDoList[index]),
+                );
+              },
             ),
           )
         ],
