@@ -58,6 +58,7 @@ class _HomePageState extends State<HomePage> {
     no ato, utilizamos a função assincrona*/
     final directory = await getApplicationDocumentsDirectory();
     return File("${directory.path}/data.json");
+    //o nome data podemos alterar para o nome desejado
   }
 
   Future<File> _saveData() async {
