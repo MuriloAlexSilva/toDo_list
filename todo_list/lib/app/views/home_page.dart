@@ -1,6 +1,7 @@
 import 'dart:io'; //File
 import 'dart:async'; //Future
 import 'dart:convert'; //Arquivos json
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -10,7 +11,51 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List _toDoList = ["Murilo", "Camila", "Muca", "Manuela"];
+  List _toDoList = [];
+  Map<String, dynamic> _lastRemoved;
+  int _lastRemovedPos;
+  TextEditingController _toDoController = TextEditingController();
+
+  @override
+  void initState() {
+    //Para carregar os dados salvos no app
+    super.initState();
+    _readData().then(
+      (data) {
+        setState(
+          () {
+            _toDoList = jsonDecode(data);
+          },
+        );
+      },
+    );
+  }
+
+  Future<Null> _refresh() async {
+    await Future.delayed(Duration(seconds: 1));
+    setState(() {
+      _toDoList.sort((a, b) {
+        if (a["ok"] && !b["ok"])
+          return 1;
+        else if (!a["ok"] && b["ok"])
+          return -1;
+        else
+          return 0;
+      });
+      _saveData();
+    });
+  }
+
+  void _addToDo() {
+    setState(() {
+      Map<String, dynamic> newToDo = Map();
+      newToDo["title"] = _toDoController.text; //Adiciona o texto no title
+      _toDoController.text = ""; //zero o controller para novas adições
+      newToDo["ok"] = false;
+      _toDoList.add(newToDo);
+      _saveData();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +77,14 @@ class _HomePageState extends State<HomePage> {
                   //tamanho do textField, assim ele irá colocar o textField
                   //no maximo que ele puder.
                   child: TextField(
+                    controller: _toDoController,
                     decoration: InputDecoration(
                         labelText: "Nova Tarefa",
                         labelStyle: TextStyle(color: Colors.blueAccent)),
                   ),
                 ),
                 RaisedButton(
-                  onPressed: () {},
+                  onPressed: _addToDo,
                   color: Colors.blueAccent,
                   child: Text('ADD'),
                   textColor: Colors.white,
@@ -49,24 +95,74 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             //Necessario o expanded para poder saber até onde vai o ListView, caso não coloque
             //não irá aparecer nada
-            child: ListView.builder(
-              padding: EdgeInsets.only(top: 10),
-              itemCount: _toDoList.length,
-              itemBuilder: (context, index) {
-                //Nos instanciamos o index para chamar o index da lista e context para chamar o contexto do index solicitado.
-                return CheckboxListTile(
-                  value: _toDoList[index]["ok"],
-                  secondary: CircleAvatar(
-                    child: Icon(
-                        _toDoList[index]["ok"] ? Icons.check : Icons.error),
-                  ),
-                  title: Text(_toDoList[index]),
-                );
-              },
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView.builder(
+                padding: EdgeInsets.only(top: 10),
+                itemCount: _toDoList.length,
+                itemBuilder: (context, index) {
+                  //Nos instanciamos o index para chamar o index da lista e context para chamar o contexto do index solicitado.
+                  return BuildItem(context, index);
+                },
+              ),
             ),
           )
         ],
       ),
+    );
+  }
+
+  Widget BuildItem(context, index) {
+    return Dismissible(
+      direction: DismissDirection.startToEnd,
+      key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
+      child: CheckboxListTile(
+        onChanged: (check) {
+          setState(() {
+            //seria para mudar o estado do ok, de false para true e vice-versa
+            _toDoList[index]["ok"] = check;
+            _saveData();
+          });
+        },
+        value: _toDoList[index]["ok"],
+        secondary: CircleAvatar(
+          child: Icon(_toDoList[index]["ok"] ? Icons.check : Icons.error),
+        ),
+        title: Text(_toDoList[index]["title"]),
+      ),
+      background: Container(
+        color: Colors.red,
+        child: Align(
+            alignment: Alignment(-0.9, 0),
+            child: Icon(
+              Icons.delete,
+              color: Colors.white,
+            )),
+      ),
+      onDismissed: (direction) {
+        //Seria uma função para quando for deletado a note,
+        setState(() {
+          _lastRemoved = Map.from(_toDoList[index]);
+          _lastRemovedPos = index;
+          _toDoList.removeAt(index);
+          _saveData();
+
+          final snack = SnackBar(
+            duration: Duration(seconds: 2),
+            content: Text("Tarefa ${_lastRemoved["title"]} removida!! "),
+            action: SnackBarAction(
+                label: "Desfazer",
+                onPressed: () {
+                  setState(() {
+                    _toDoList.insert(_lastRemovedPos, _lastRemoved);
+                    _saveData();
+                  });
+                }),
+          );
+          Scaffold.of(context).removeCurrentSnackBar();
+          Scaffold.of(context).showSnackBar(snack);
+        });
+      },
     );
   }
 
