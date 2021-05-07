@@ -101,7 +101,7 @@ class _HomePageState extends State<HomePage> {
                 itemCount: _toDoList.length,
                 itemBuilder: (context, index) {
                   //Nos instanciamos o index para chamar o index da lista e context para chamar o contexto do index solicitado.
-                  return BuildItem(context, index);
+                  return buildItem(context, index);
                 },
               ),
             ),
@@ -111,7 +111,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget BuildItem(context, index) {
+  Widget buildItem(context, index) {
     return Dismissible(
       direction: DismissDirection.startToEnd,
       key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
