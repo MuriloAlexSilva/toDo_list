@@ -1,7 +1,6 @@
 import 'dart:io'; //File
 import 'dart:async'; //Future
 import 'dart:convert'; //Arquivos json
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
